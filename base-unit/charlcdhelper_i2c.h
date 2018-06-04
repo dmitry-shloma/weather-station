@@ -11,26 +11,20 @@
 
 // TODO: Implement the function, that wraps the write() for uses with Serial.read()
 
-#ifndef CHARLCDHELPER_H
-#define CHARLCDHELPER_H
+#ifndef CHARLCDHELPER_I2C_H
+#define CHARLCDHELPER_I2C_H
 
 #include <stdlib.h>
 #include <string.h>
 
-#include <LiquidCrystal.h>
-
-// LCD pin's
-#define LCD_RS_PIN  4
-#define LCD_E_PIN   5
-#define LCD_DB4_PIN 6
-#define LCD_DB5_PIN 7
-#define LCD_DB6_PIN 8
-#define LCD_DB7_PIN 9
+#include <Wire.h>
+#include <LiquidCrystal_PCF8574.h>
 
 static unsigned char lcd_cols_ = 0;
 static unsigned char lcd_rows_ = 0;
 
-LiquidCrystal lcd_(LCD_RS_PIN, LCD_E_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
+extern const uint8_t charlcd_i2c_addr;
+LiquidCrystal_PCF8574 lcd_(charlcd_i2c_addr);
 
 /**
  * @brief lcd_init function for initializing the lcd
@@ -42,6 +36,9 @@ void lcd_init(uint8_t lcd_cols, uint8_t lcd_rows) {
     if (!is_init) {
         lcd_cols_ = lcd_cols;
         lcd_rows_ = lcd_rows;
+        Wire.begin();
+        Wire.beginTransmission(charlcd_i2c_addr);
+        int error = Wire.endTransmission(); // TODO: implement error handling
         lcd_.begin(lcd_cols_, lcd_rows_);
         is_init = true;
     }
@@ -128,5 +125,5 @@ void lcd_clear() {
     lcd_.clear();
 }
 
-#endif // CHARLCDHELPER_H
+#endif // CHARLCDHELPER_I2C_H
 

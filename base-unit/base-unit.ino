@@ -4,13 +4,15 @@
 
 #include "onewirehelper.h"
 #include "hih4000helper.h"
-#include "charlcdhelper.h"
+#include "charlcdhelper_i2c.h"
 #include "loghelper.h"
 
 #define HIH4000_PIN A0
 
 const uint8_t onewire_pin = 2;
 #define ONEWIRE_SENSORS_MAX 3
+
+const uint8_t charlcd_i2c_addr = 0x3F;
 
 #define RECEIVER_PIN 3
 
@@ -78,7 +80,7 @@ void loop()
                 
         float t = onewire_get_temperature(addrv[i], C);
 //        lcd_out_value(str, t, 4, 1, "DSC", 0, 0);
-        lcd_out_value("", t, 4, 1, "DSC", 0, 0);
+        lcd_out_value("T: ", t, 4, 1, "DSC", 0, 0);
 
         unsigned long ms1 = millis();
         float rh = 0.0;
