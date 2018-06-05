@@ -1,9 +1,9 @@
 /****************************************************************************
 **
 ** Copyright (C) 2017 Dmitry Shloma
-** Contact: http://www.cpp-training.ru
+** Contact: vk.com/dmitry.shloma
 **
-** This file is part of the Mikhailo's project and wraps from 
+** This file is part of the weather-station project and wraps from 
 ** LiquidCrystal's library the following functions : LiquidCrystal(), begin(), 
 ** clear(), write() in use with createChar() , print(), createChar(). 
 ** To the other functions, you can access using the object lcd_
@@ -23,8 +23,7 @@
 static unsigned char lcd_cols_ = 0;
 static unsigned char lcd_rows_ = 0;
 
-extern const uint8_t charlcd_i2c_addr;
-LiquidCrystal_PCF8574 lcd_(charlcd_i2c_addr);
+LiquidCrystal_PCF8574 lcd_(PCF8574_ADDR);
 
 /**
  * @brief lcd_init function for initializing the lcd
@@ -37,8 +36,13 @@ void lcd_init(uint8_t lcd_cols, uint8_t lcd_rows) {
         lcd_cols_ = lcd_cols;
         lcd_rows_ = lcd_rows;
         Wire.begin();
-        Wire.beginTransmission(charlcd_i2c_addr);
-        int error = Wire.endTransmission(); // TODO: implement error handling
+        Wire.beginTransmission(PCF8574_ADDR);
+        int error = Wire.endTransmission();
+        if (error != 0) {
+            Serial.print("WEATHER-STATION: error // if not working, use a i2c scanner");
+            Serial.println(error);
+            while(1) {};
+        }
         lcd_.begin(lcd_cols_, lcd_rows_);
         is_init = true;
     }

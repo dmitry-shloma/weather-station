@@ -1,10 +1,13 @@
-#include <iarduino_RF433_Receiver.h>
-#include <SPI.h>
-#include <SD.h>
+#define PROJECT_NAME WEATHER-STATION
+#define TO_STR(str) #str
+
+#define PCF8574_ADDR 0x3F
+#include "charlcdhelper_i2c.h"
 
 #include "onewirehelper.h"
 #include "hih4000helper.h"
-#include "charlcdhelper_i2c.h"
+
+#define LOG_FILE "WEATHER.LOG" // only 8.3
 #include "loghelper.h"
 
 #define HIH4000_PIN A0
@@ -12,40 +15,33 @@
 const uint8_t onewire_pin = 2;
 #define ONEWIRE_SENSORS_MAX 3
 
-const uint8_t charlcd_i2c_addr = 0x3F;
-
-#define RECEIVER_PIN 3
-
 #define ONE_SEC 1000
-
-#define CHIP_SELECT 10
 
 // LCD size's
 #define LCD_COLS 16
 #define LCD_ROWS 2
 
-iarduino_RF433_Receiver radioRX(RECEIVER_PIN);
-
 void setup()
 {
     Serial.begin(9600);
-    lcd_init(LCD_COLS, LCD_ROWS);
-    lcd_clear();
+  
+    to_log(TO_SERIAL, "is started", USUAL);
+    to_log(TO_SERIAL, "is started", NOTIFY);
+    to_log(TO_SERIAL, "is started", CRITICAL);
 
-    if (!SD.begin(CHIP_SELECT)) {
-        // TODO: error
-        Serial.println("Card failed, or not present");
-    }
-
-    radioRX.begin(1000);
-    radioRX.openReadingPipe(5);
-    radioRX.startListening();
+    to_log(TO_SDCARD, "is started", USUAL);
+    to_log(TO_SDCARD, "is started", NOTIFY);
+    to_log(TO_SDCARD, "is started", CRITICAL);
+        
+//    lcd_init(LCD_COLS, LCD_ROWS);
+//    lcd_clear();
 }
 
 unsigned long ms0 = 0;
 
 void loop()
 {
+    return;
     unsigned char addrv[ONEWIRE_SENSORS_MAX][8] = {{0}};
     uint8_t addrc = 0;
     
@@ -62,13 +58,6 @@ void loop()
         return;
     }
 
-    char buffer[12] = "";
-    uint8_t k;
-    if(radioRX.available(&k)){                            // Если в буфере имеются данные принятые приёмником, то получаем номер трубы в переменную k и ...
-       radioRX.read(&buffer, 12);                       // Читаем данные в массив j и указываем сколько байт читать
-       Serial.print(buffer);                                   // Выводим полученные данные на монитор
-       Serial.println((String)" (Pipe="+k+")");           // Выводим номер трубы, по которой эти данные получены. Так можно определить, от кокого передатчика они получены
-    }
     for (int i = 0; i < addrc; ++i) {
         char str[19] = "";  // 0...15 byte for addr, 16 byte - ':', 17 byte - ' ', 18 byte - '\0'
         onewire_addr_to_str(addrv[i], str);
@@ -90,17 +79,15 @@ void loop()
             ms0 = ms1;
         }
 
-        File daqlog = SD.open("daq.log", FILE_WRITE);
-        if (!daqlog) {
-            // TODO: error
-            Serial.println("error open file");
-        }
-        char buf2[255] = "";
-        sprintf(buf2, "temp: %.1f C, rh: %.1f %", t, rh);
-        Serial.println(buf2);
-        daqlog.println(buf2);
-        daqlog.close();
+//        Serial.println(t);
+//        Serial.println(rh);
+
+//        char msg[255] = "";
+//        sprintf(msg, "temp: %.1f C, rh: %.1f %", t, rh);
+//        Serial.println(msg);
+//        to_log(SDCARD, msg, INFO);
         
         delay(2 * ONE_SEC);
     }        
 }
+
