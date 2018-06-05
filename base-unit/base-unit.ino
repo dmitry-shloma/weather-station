@@ -1,7 +1,4 @@
-#define PROJECT_NAME WEATHER-STATION
-#define TO_STR(str) #str
-
-#define PCF8574_ADDR 0x3F
+#define PCF8574_ADDR 0x3F // find it using i2c scanner
 #include "charlcdhelper_i2c.h"
 
 #include "onewirehelper.h"
@@ -13,9 +10,12 @@
 #define HIH4000_PIN A0
 
 const uint8_t onewire_pin = 2;
-#define ONEWIRE_SENSORS_MAX 3
+#define ONEWIRE_SENSORS_MAX 1
 
 #define ONE_SEC 1000
+
+#define STOP \
+    while(1) {};
 
 // LCD size's
 #define LCD_COLS 16
@@ -24,33 +24,49 @@ const uint8_t onewire_pin = 2;
 void setup()
 {
     Serial.begin(9600);
-  
-    to_log(TO_SERIAL, "is started", USUAL);
-    to_log(TO_SERIAL, "is started", NOTIFY);
-    to_log(TO_SERIAL, "is started", CRITICAL);
 
-    to_log(TO_SDCARD, "is started", USUAL);
-    to_log(TO_SDCARD, "is started", NOTIFY);
-    to_log(TO_SDCARD, "is started", CRITICAL);
-        
-//    lcd_init(LCD_COLS, LCD_ROWS);
-//    lcd_clear();
+    to_log(TO_SERIAL, "ws is started", USUAL);
+    
+    int error = lcd_init(LCD_COLS, LCD_ROWS);
+    if (error != CHAR_LCD_NO_ERROR) {
+        char msg[20] = "";
+        sprintf(msg, "lcd init, error %d", error);
+        to_log(TO_SERIAL, msg, CRITICAL);
+//        to_log(TO_SDCARD, msg, CRITICAL);
+        STOP;
+    }
+    to_log(TO_SERIAL, "lcd init success", USUAL);
+//    to_log(TO_SDCARD, "lcd init success", USUAL);
+    lcd_clear();
+
+    const char *title[] = {
+        "WEATHER",
+        "STATION"
+    };
+    lcd_out_text(title[0], (LCD_COLS - strlen(title[0])) / 2, 0);
+    lcd_out_text(title[1], (LCD_COLS - strlen(title[0])) / 2, 1);
+    
+    delay(ONE_SEC * 5);
+    lcd_clear();
 }
 
 unsigned long ms0 = 0;
 
 void loop()
-{
-    return;
+{    
     unsigned char addrv[ONEWIRE_SENSORS_MAX][8] = {{0}};
     uint8_t addrc = 0;
     
     onewire_enum_avaliable_devices(&addrc, addrv);
     if (addrc == 0) {
         const char *info[] = {
-            "Temperature sensors",
+            "Temper sensors",
             "not found!"
         };
+
+        to_log(TO_SERIAL, "t sensors not found", CRITICAL);
+//        to_log(TO_SDCARD, "t sensors not found", CRITICAL);
+        
         lcd_clear();
         lcd_out_text(info[0], (LCD_COLS - strlen(info[0])) / 2, 0);
         lcd_out_text(info[1], (LCD_COLS - strlen(info[1])) / 2, 1);

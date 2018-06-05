@@ -1,3 +1,11 @@
+/****************************************************************************
+**
+** Copyright (C) 2017 Dmitry Shloma
+** Contact: vk.com/dmitry.shloma
+**
+** This file is part of the weather-station project
+****************************************************************************/
+
 #ifndef RTCHELPER_H
 #define RTCHELPER_H
 

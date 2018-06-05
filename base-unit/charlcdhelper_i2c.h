@@ -20,6 +20,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_PCF8574.h>
 
+#define CHAR_LCD_NO_ERROR 0
+
 static unsigned char lcd_cols_ = 0;
 static unsigned char lcd_rows_ = 0;
 
@@ -30,7 +32,7 @@ LiquidCrystal_PCF8574 lcd_(PCF8574_ADDR);
  * @param lcd_cols columns count
  * @param lcd_rows rows count
  */
-void lcd_init(uint8_t lcd_cols, uint8_t lcd_rows) {
+int lcd_init(uint8_t lcd_cols, uint8_t lcd_rows) {
     static bool is_init = false;
     if (!is_init) {
         lcd_cols_ = lcd_cols;
@@ -39,12 +41,11 @@ void lcd_init(uint8_t lcd_cols, uint8_t lcd_rows) {
         Wire.beginTransmission(PCF8574_ADDR);
         int error = Wire.endTransmission();
         if (error != 0) {
-            Serial.print("WEATHER-STATION: error // if not working, use a i2c scanner");
-            Serial.println(error);
-            while(1) {};
+            return error;
         }
         lcd_.begin(lcd_cols_, lcd_rows_);
         is_init = true;
+        return CHAR_LCD_NO_ERROR;
     }
 }
 
