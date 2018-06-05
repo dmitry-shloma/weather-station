@@ -7,7 +7,10 @@
 #define LOG_FILE "WEATHER.LOG" // only 8.3
 #include "loghelper.h"
 
-#include <RCSwitch.h>
+#include <RH_ASK.h>
+#include <SPI.h>
+
+#include <string.h>
 
 #define HIH4000_PIN A0
 
@@ -23,14 +26,18 @@ const uint8_t onewire_pin = 3;
 #define LCD_COLS 16
 #define LCD_ROWS 2
 
-RCSwitch mySwitch = RCSwitch();
+RH_ASK driver;
 
 void setup()
 {
     Serial.begin(9600);
 
     to_log(TO_SERIAL, "ws is started", USUAL);
-    
+
+    if (!driver.init()) {
+        to_log(TO_SERIAL, "rf433 init fail", NOTIFY);
+    }
+     
     int error = lcd_init(LCD_COLS, LCD_ROWS);
     if (error != CHAR_LCD_NO_ERROR) {
         char msg[20] = "";
@@ -52,8 +59,6 @@ void setup()
     
     delay(ONE_SEC * 5);
     lcd_clear();
-
-    mySwitch.enableReceive(0);
 }
 
 unsigned long ms0 = 0;
@@ -100,23 +105,35 @@ void loop()
         const unsigned char degree[8] = {0x07, 0x05, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00}; // degree symbol
         lcd_out_custom_char(degree, 0, 2, 0);
 
-        int rh2 = 12;
-        if (mySwitch.available()) {
-            int value = mySwitch.getReceivedValue();
-            int t2 = 12;
-            lcd_out_value("2:", t2, 2, 0, "NONE", 11, 0);
-            to_log(TO_SERIAL, t2, USUAL);
-            rh2 = value;
+        //FIXME: Ширина поля сделана что бы цифры были ровно,
+        // однако если цифра отрицательная, она начинает скакать потому что с минусом ширина больше
+        // если сделать ее меньше то остается часть от прежней цифры
+
+        int t_rh[2] = {0};
+        int t_rh_i = 0;
+        uint8_t buf[8] = "";
+        uint8_t buflen = sizeof(buf);
+        if (driver.recv(buf, &buflen)) { // неблокирующая функция
+            char *ch = strtok((char*)buf, "/");
+            while (ch != NULL) {
+                t_rh[t_rh_i] = atoi(ch);
+                ch = strtok(NULL, "/");
+                ++t_rh_i;
+            }
         }
-        mySwitch.resetAvailable();
+        if (t_rh[0] != 0) { // BUG: 0 градусов пролетает :)
+            lcd_out_value("2:", t_rh[0], 2, 0, "NONE", 11, 0); // t2
+        }
 
         unsigned long ms1 = millis();
         if (ms1 - ms0 > 5 * ONE_SEC) {
             float rh1 = get_humidity(HIH4000_PIN, t1);
             lcd_out_value("RH,%: 1:", rh1, 2, 0, "NONE", 0, 1);
-            to_log(TO_SERIAL, 12, USUAL);
-            lcd_out_value("2:", rh2, 2, 0, "NONE", 11, 1);
-            to_log(TO_SERIAL, rh2, USUAL);
+//            to_log(TO_SERIAL, 12, USUAL);
+        if (t_rh[1] != 0) { // BUG: с влажностью не так страшно :)
+            lcd_out_value("2:", t_rh[1], 2, 0, "NONE", 11, 1); // rh2
+        }
+//            to_log(TO_SERIAL, rh2, USUAL);
             ms0 = ms1;
         }
     }        

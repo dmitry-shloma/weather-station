@@ -1,3 +1,11 @@
+/****************************************************************************
+**
+** Copyright (C) 2017 Dmitry Shloma
+** Contact: vk.com/dmitry.shloma
+**
+** This file is part of the weather-station project
+****************************************************************************/
+
 #ifndef HIH4000HELPER_H
 #define HIH4000HELPER_H
 
