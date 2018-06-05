@@ -7,9 +7,11 @@
 #define LOG_FILE "WEATHER.LOG" // only 8.3
 #include "loghelper.h"
 
+#include <RCSwitch.h>
+
 #define HIH4000_PIN A0
 
-const uint8_t onewire_pin = 2;
+const uint8_t onewire_pin = 3;
 #define ONEWIRE_SENSORS_MAX 1
 
 #define ONE_SEC 1000
@@ -20,6 +22,8 @@ const uint8_t onewire_pin = 2;
 // LCD size's
 #define LCD_COLS 16
 #define LCD_ROWS 2
+
+RCSwitch mySwitch = RCSwitch();
 
 void setup()
 {
@@ -48,9 +52,12 @@ void setup()
     
     delay(ONE_SEC * 5);
     lcd_clear();
+
+    mySwitch.enableReceive(0);
 }
 
 unsigned long ms0 = 0;
+bool is_need_update_ = false;
 
 void loop()
 {    
@@ -70,10 +77,14 @@ void loop()
         lcd_clear();
         lcd_out_text(info[0], (LCD_COLS - strlen(info[0])) / 2, 0);
         lcd_out_text(info[1], (LCD_COLS - strlen(info[1])) / 2, 1);
-        delay(ONE_SEC);
+        is_need_update_ = true;
         return;
     }
 
+    if (is_need_update_) {
+        lcd_clear();
+        is_need_update_ = false;
+    }
     for (int i = 0; i < addrc; ++i) {
         char str[19] = "";  // 0...15 byte for addr, 16 byte - ':', 17 byte - ' ', 18 byte - '\0'
         onewire_addr_to_str(addrv[i], str);
@@ -83,27 +94,31 @@ void loop()
 
         // memcpy(&str[16], ": ", 2); // don't use this, because it requires 7942, instead of 7934 bytes
                 
-        float t = onewire_get_temperature(addrv[i], C);
-//        lcd_out_value(str, t, 4, 1, "DSC", 0, 0);
-        lcd_out_value("T: ", t, 4, 1, "DSC", 0, 0);
+        float t1 = onewire_get_temperature(addrv[i], C);
+//        lcd_out_value(str, t1, 4, 1, "DSC", 0, 0);
+        lcd_out_value("T, C: 1:", t1, 2, 0, "NONE", 0, 0);
+        const unsigned char degree[8] = {0x07, 0x05, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00}; // degree symbol
+        lcd_out_custom_char(degree, 0, 2, 0);
+
+        int rh2 = 12;
+        if (mySwitch.available()) {
+            int value = mySwitch.getReceivedValue();
+            int t2 = 12;
+            lcd_out_value("2:", t2, 2, 0, "NONE", 11, 0);
+            to_log(TO_SERIAL, t2, USUAL);
+            rh2 = value;
+        }
+        mySwitch.resetAvailable();
 
         unsigned long ms1 = millis();
-        float rh = 0.0;
         if (ms1 - ms0 > 5 * ONE_SEC) {
-            rh = get_humidity(HIH4000_PIN, t);
-            lcd_out_value("RH: ", rh, 4, 1, "RH", 0, 1);
+            float rh1 = get_humidity(HIH4000_PIN, t1);
+            lcd_out_value("RH,%: 1:", rh1, 2, 0, "NONE", 0, 1);
+            to_log(TO_SERIAL, 12, USUAL);
+            lcd_out_value("2:", rh2, 2, 0, "NONE", 11, 1);
+            to_log(TO_SERIAL, rh2, USUAL);
             ms0 = ms1;
         }
-
-//        Serial.println(t);
-//        Serial.println(rh);
-
-//        char msg[255] = "";
-//        sprintf(msg, "temp: %.1f C, rh: %.1f %", t, rh);
-//        Serial.println(msg);
-//        to_log(SDCARD, msg, INFO);
-        
-        delay(2 * ONE_SEC);
     }        
 }
 
