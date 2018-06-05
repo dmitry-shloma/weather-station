@@ -114,6 +114,7 @@ void loop()
         uint8_t buf[8] = "";
         uint8_t buflen = sizeof(buf);
         if (driver.recv(buf, &buflen)) { // неблокирующая функция
+            to_log(SERIAL, (char*)buf, USUAL);
             char *ch = strtok((char*)buf, "/");
             while (ch != NULL) {
                 t_rh[t_rh_i] = atoi(ch);
