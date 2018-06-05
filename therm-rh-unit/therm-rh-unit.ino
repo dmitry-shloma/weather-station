@@ -17,6 +17,8 @@ const uint8_t onewire_pin = 3;
 #define STOP \
     while(1) {};
 
+#define LED_TX_PIN 7
+
 RH_ASK driver;
 
 void setup()
@@ -28,6 +30,7 @@ void setup()
     if (!driver.init()) {
         to_log(TO_SERIAL, "rf433 init fail", NOTIFY);
     }
+    pinMode(LED_TX_PIN, OUTPUT);
 }
 
 unsigned long ms0 = 0;
@@ -68,8 +71,10 @@ void loop()
         char packet[8] = "";
         sprintf(packet, "%d/%d", (int)ceil(t), (int)ceil(rh));
         to_log(TO_SERIAL, packet, USUAL);
+        digitalWrite(LED_TX_PIN, HIGH);
         driver.send((uint8_t *)packet, strlen(packet));
         driver.waitPacketSent();
+        digitalWrite(LED_TX_PIN, LOW);
         delay(ONE_SEC * 2);        
     }        
 }

@@ -26,6 +26,8 @@ const uint8_t onewire_pin = 3;
 #define LCD_COLS 16
 #define LCD_ROWS 2
 
+#define LED_RX_PIN 7
+
 RH_ASK driver;
 
 void setup()
@@ -37,6 +39,8 @@ void setup()
     if (!driver.init()) {
         to_log(TO_SERIAL, "rf433 init fail", NOTIFY);
     }
+
+    pinMode(LED_RX_PIN, OUTPUT);
      
     int error = lcd_init(LCD_COLS, LCD_ROWS);
     if (error != CHAR_LCD_NO_ERROR) {
@@ -113,6 +117,7 @@ void loop()
         int t_rh_i = 0;
         uint8_t buf[8] = "";
         uint8_t buflen = sizeof(buf);
+        digitalWrite(LED_RX_PIN, HIGH);
         if (driver.recv(buf, &buflen)) { // неблокирующая функция
             to_log(SERIAL, (char*)buf, USUAL);
             char *ch = strtok((char*)buf, "/");
@@ -122,6 +127,7 @@ void loop()
                 ++t_rh_i;
             }
         }
+        digitalWrite(LED_RX_PIN, LOW);
         if (t_rh[0] != 0) { // BUG: 0 градусов пролетает :)
             lcd_out_value("2:", t_rh[0], 2, 0, "NONE", 11, 0); // t2
         }
