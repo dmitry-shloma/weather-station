@@ -9,7 +9,7 @@
 #include "sdcardhelper.h"
 
 #ifndef LOG_FILE
-#define LOG_FILE DAQ.LOG
+#define LOG_FILE "DAQ.LOG"
 #endif
 
 // may be add this CHARLCD, GRAPHLCD, LED_INDICATOR ... and etc ?
@@ -67,7 +67,7 @@ void to_log(LOG_DST dst, const char *msg, MSG_MODE mode)
         char msg[70] = "";
         switch (error) {
         case SDCARD_NO_ERROR:
-            sprintf(msg, "in file %s, write %s", LOG_FILE, msg_log);
+            sprintf(msg, "append \"%s\" in file \"%s\"", msg_log, LOG_FILE);
             to_log(TO_SERIAL, msg, USUAL);
             break;
         case SDCARD_NOT_PRESENT:
